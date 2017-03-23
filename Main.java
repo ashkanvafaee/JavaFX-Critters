@@ -4,17 +4,7 @@ package assignment5;
 import java.io.Console;
 
 /* Main.java
- * EE422C Project 5 submission by
- * Replace <...> with your actual data.
- * Kevin Chau
- * kc28535
- * 18238
- * Ashkan Vafaee
- * av28837
- * 18238
- * Slip days used: <0>
- * Git URL: https://github.com/ashkanvafaee/assignment5
- * Spring 2017
+* Implements Critters World and all User Interface functionality
 */
 
 import java.io.File;
