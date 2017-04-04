@@ -14,6 +14,7 @@ package assignment5;
  * Spring 2017
 */
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,10 +60,11 @@ public abstract class Critter {
 
 	private boolean moved;
 	private static String myPackage;
-	private static List<Critter> population = new java.util.ArrayList<Critter>();
-	private static List<Critter> babies = new java.util.ArrayList<Critter>();
-	private static HashMap<Critter, Polygon> shapes = new HashMap<Critter, Polygon>();
+	private static List<Critter> population = new ArrayList<>();
+	private static List<Critter> babies = new ArrayList<>();
+	private static HashMap<Critter, Shape> shapes = new HashMap<>();
 
+	private static double worldSize = 0;
 
 	// Gets the package name. This assumes that Critter and its subclasses are
 	// all in the same package.
@@ -71,7 +73,24 @@ public abstract class Critter {
 	}
 
 	protected final String look(int direction, boolean steps) {
-		return "";
+		this.energy -= Params.look_energy_cost;
+
+		int[] dx = { 1, 1, 0, -1, -1, -1, 0, 1 };
+		int[] dy = { 0, -1, -1, -1, 0, 1, 1, 1 };
+		int dist = steps ? 2 : 1;
+
+		// Check each critter in population
+		for (Critter cr : population) {
+
+			// Location to look is determined by direction and dist
+			if (this != cr && cr.getEnergy() > 0 && this.x_coord + dx[direction] * dist == cr.x_coord
+					&& this.y_coord + dy[direction] * dist == cr.y_coord) {
+				return cr.toString();
+			}
+		}
+
+		// Gets to here if no critter is at the look position
+		return null;
 	}
 
 	/* rest is unchanged from Project 4 */
@@ -134,6 +153,11 @@ public abstract class Critter {
 	}
 
 	protected final void reproduce(Critter offspring, int direction) {
+		// Not enough energy to reproduce
+		if (this.energy < Params.min_reproduce_energy) {
+			return;
+		}
+
 		offspring.x_coord = this.x_coord;
 		offspring.y_coord = this.y_coord;
 		offspring.energy = this.energy / 2;
@@ -260,7 +284,7 @@ public abstract class Critter {
 
 							// If moving causes critter to move into occupied
 							// spot, move back
-							if (cr2 != cr3 && cr2.x_coord == cr3.x_coord && cr1.y_coord == cr3.y_coord) {
+							if (cr2 != cr3 && cr2.x_coord == cr3.x_coord && cr2.y_coord == cr3.y_coord) {
 								cr2.x_coord = cr1.x_coord;
 								cr2.y_coord = cr1.y_coord;
 							}
@@ -324,7 +348,6 @@ public abstract class Critter {
 
 			// Remove dead critters
 			if (temp.energy <= 0) {
-				Main.grid.getChildren().remove(temp);				// removes dead critters from the grid
 				it.remove();
 			}
 
@@ -356,91 +379,123 @@ public abstract class Critter {
 		while (i.hasNext()) {
 			Critter temp = i.next();
 			if (temp.energy <= 0) {
-				Main.grid.getChildren().remove(temp);				// removes dead critters from the grid
 				i.remove();
 			}
 		}
-
 	}
 
 	public static void displayWorld(Object pane) {
-	
-		GridPane grid = (GridPane) pane;	
-			for (int i = 0; i < population.size(); i++) {
-				grid.getChildren().remove(shapes.get(population.get(i)));
 
-				if (population.get(i).viewShape().equals(CritterShape.CIRCLE)) {
-					Shape s = new Circle(2.8);
-					s.setFill(population.get(i).viewFillColor());
-					s.setStroke(population.get(i).viewOutlineColor());
-					s.setStyle("-fx-border-color: black;");
-					grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
-					shapes.put(population.get(i), (Polygon) s);
-					GridPane.setHalignment(s, HPos.CENTER);
-					GridPane.setValignment(s, VPos.CENTER);
+		if (Params.world_width < 30 && Params.world_height < 30) {
+			worldSize = 3;
+		}
+		// Medium world
+		else if (Params.world_width < 60 && Params.world_height < 60) {
+			worldSize = 1.6;
+		}
+		// Big world
+		else {
+			worldSize = 1;
+		}
+
+		// Removing all objects from shape to be refreshed with correct
+		// coordinates in displayWorld
+		GridPane grid = (GridPane) pane;
+		try {
+			grid.getChildren().removeAll(shapes.values());
+		} catch (Exception e) {
+		}
+
+		shapes.clear();
+
+		for (int i = 0; i < population.size(); i++) {
+
+			if (population.get(i).viewShape().equals(CritterShape.CIRCLE)) {
+				Shape s = new Circle(2.8 * worldSize);
+				s.setFill(population.get(i).viewFillColor());
+				s.setStroke(population.get(i).viewOutlineColor());
+				s.setStyle("-fx-border-color: black;");
+				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				shapes.put(population.get(i), s);
+				GridPane.setHalignment(s, HPos.CENTER);
+				GridPane.setValignment(s, VPos.CENTER);
+			}
+
+			else if (population.get(i).viewShape().equals(CritterShape.SQUARE)) {
+				Shape s = new Rectangle(4 * worldSize, 4 * worldSize);
+				s.setFill(population.get(i).viewFillColor());
+				s.setStroke(population.get(i).viewOutlineColor());
+				s.setStyle("-fx-border-color: black;");
+				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				shapes.put(population.get(i), s);
+				GridPane.setHalignment(s, HPos.CENTER);
+				GridPane.setValignment(s, VPos.CENTER);
+			}
+
+			else if (population.get(i).viewShape().equals(CritterShape.TRIANGLE)) {
+				Polygon s = new Polygon();
+				s.getPoints().addAll((double) population.get(i).x_coord + 1, (double) population.get(i).y_coord, // vertex 1
+						(double) population.get(i).x_coord + 5, (double) population.get(i).y_coord + 5, 		 // vertex 2
+						(double) population.get(i).x_coord + 9, (double) population.get(i).y_coord); 			 // vertex 3
+				for (int ind = 0; ind < s.getPoints().size(); ind++) {
+					s.getPoints().set(ind, s.getPoints().get(ind) * worldSize);
 				}
 
-				else if (population.get(i).viewShape().equals(CritterShape.SQUARE)) {
-					Shape s = new Rectangle(3, 3);
-					s.setFill(population.get(i).viewFillColor());
-					s.setStroke(population.get(i).viewOutlineColor());
-					s.setStyle("-fx-border-color: black;");
-					grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
-					shapes.put(population.get(i), (Polygon) s);
-					GridPane.setHalignment(s, HPos.CENTER);
-					GridPane.setValignment(s, VPos.CENTER);
+				s.setFill(population.get(i).viewFillColor());
+				s.setStroke(population.get(i).viewOutlineColor());
+				s.setStyle("-fx-border-color: black;");
+				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				shapes.put(population.get(i), s);
+				GridPane.setHalignment(s, HPos.CENTER);
+				GridPane.setValignment(s, VPos.CENTER);
+				s.setTranslateY(1);
+			}
+
+			else if (population.get(i).viewShape().equals(CritterShape.DIAMOND)) {
+				Polygon s = new Polygon();
+				s.getPoints().addAll((double) population.get(i).x_coord, (double) population.get(i).y_coord, // vertex 1
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord + 4,		 // vertex 2
+						(double) population.get(i).x_coord + 8, (double) population.get(i).y_coord,			 // vertex 3
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord - 4);	 // vertex 4
+				for (int ind = 0; ind < s.getPoints().size(); ind++) {
+					s.getPoints().set(ind, s.getPoints().get(ind) * worldSize);
 				}
 
-				else if (population.get(i).viewShape().equals(CritterShape.TRIANGLE)) {
-					Polygon s = new Polygon();
-					s.getPoints().addAll(
-							(double)population.get(i).x_coord     , (double)population.get(i).y_coord,			// vertex 1
-							(double)population.get(i).x_coord +  5, (double)population.get(i).y_coord + 5,		// vertex 2
-							(double)population.get(i).x_coord + 10, (double)population.get(i).y_coord);			// vertex 3
-					s.setFill(population.get(i).viewFillColor());
-					s.setStroke(population.get(i).viewOutlineColor());
-					s.setStyle("-fx-border-color: black;");
-					grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
-					shapes.put(population.get(i), (Polygon) s);
-					GridPane.setHalignment(s, HPos.CENTER);
-					GridPane.setValignment(s, VPos.CENTER);
-					s.setTranslateY(1);
+				s.setFill(population.get(i).viewFillColor());
+				s.setStroke(population.get(i).viewOutlineColor());
+				s.setStyle("-fx-border-color: black;");
+				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				shapes.put(population.get(i), s);
+				GridPane.setHalignment(s, HPos.CENTER);
+				GridPane.setValignment(s, VPos.CENTER);
+			}
+
+			else if (population.get(i).viewShape().equals(CritterShape.STAR)) {
+				Polygon s = new Polygon();
+				s.getPoints().addAll((double) population.get(i).x_coord + 0, (double) population.get(i).y_coord,// vertex 1
+						(double) population.get(i).x_coord + 2, (double) population.get(i).y_coord + 2,			// vertex 2
+						(double) population.get(i).x_coord + 0, (double) population.get(i).y_coord + 4,			// vertex 3
+						(double) population.get(i).x_coord + 2.7, (double) population.get(i).y_coord + 3.2,		// vertex 4
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord + 5,			// vertex 5
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord + 2.7,		// vertex 6
+						(double) population.get(i).x_coord + 6, (double) population.get(i).y_coord + 2,			// vertex 7
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord + 1.2,		// vertex 8
+						(double) population.get(i).x_coord + 4, (double) population.get(i).y_coord - 1, 		// vertex 9
+						(double) population.get(i).x_coord + 2.7, (double) population.get(i).y_coord + 0.7);	// vertex 10
+				for (int ind = 0; ind < s.getPoints().size(); ind++) {
+					s.getPoints().set(ind, s.getPoints().get(ind) * worldSize);
 				}
-				
-				else if (population.get(i).viewShape().equals(CritterShape.DIAMOND)) {
-					Polygon s = new Polygon();
-					s.getPoints().addAll(
-							(double)population.get(i).x_coord     , (double)population.get(i).y_coord,			// vertex 1
-							(double)population.get(i).x_coord +  4, (double)population.get(i).y_coord + 4,		// vertex 2
-							(double)population.get(i).x_coord +  8, (double)population.get(i).y_coord,			// vertex 3
-							(double)population.get(i).x_coord +  4, (double)population.get(i).y_coord - 4);		// vertex 4
-					s.setFill(population.get(i).viewFillColor());
-					s.setStroke(population.get(i).viewOutlineColor());
-					s.setStyle("-fx-border-color: black;");
-					grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
-					shapes.put(population.get(i), (Polygon) s);
-					GridPane.setHalignment(s, HPos.CENTER);
-					GridPane.setValignment(s, VPos.CENTER);
-				}
-				
-				else if (population.get(i).viewShape().equals(CritterShape.DIAMOND)) {
-					Polygon s = new Polygon();
-					s.getPoints().addAll(
-							(double)population.get(i).x_coord +  5, (double)population.get(i).y_coord,			// vertex 1
-							(double)population.get(i).x_coord +  5, (double)population.get(i).y_coord + 5,		// vertex 2
-							(double)population.get(i).x_coord + 10, (double)population.get(i).y_coord,			// vertex 3
-							(double)population.get(i).x_coord +  5, (double)population.get(i).y_coord - 5);		// vertex 4
-					s.setFill(population.get(i).viewFillColor());
-					s.setStroke(population.get(i).viewOutlineColor());
-					shapes.put(population.get(i), (Polygon) s);
-					s.setStyle("-fx-border-color: black;");
-					grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
-					GridPane.setHalignment(s, HPos.CENTER);
-					GridPane.setValignment(s, VPos.CENTER);
-				
+
+				s.setFill(population.get(i).viewFillColor());
+				s.setStroke(population.get(i).viewOutlineColor());
+				shapes.put(population.get(i), s);
+				s.setStyle("-fx-border-color: black;");
+				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				GridPane.setHalignment(s, HPos.CENTER);
+				GridPane.setValignment(s, VPos.CENTER);
+
 			}
 		}
-		
 
 	}
 	/*
@@ -529,8 +584,10 @@ public abstract class Critter {
 	 * @param critters
 	 *            List of Critters.
 	 */
-	public static void runStats(List<Critter> critters) {
+	public static String runStats(List<Critter> critters) {
+		String output = "";
 		System.out.print("" + critters.size() + " critters as follows -- ");
+		output = "" + critters.size() + " critters as follows -- ";
 		java.util.Map<String, Integer> critter_count = new java.util.HashMap<String, Integer>();
 
 		for (Critter crit : critters) {
@@ -546,9 +603,12 @@ public abstract class Critter {
 		String prefix = "";
 		for (String s : critter_count.keySet()) {
 			System.out.print(prefix + s + ":" + critter_count.get(s));
+			output += prefix + s + ":" + critter_count.get(s);
 			prefix = ", ";
 		}
 		System.out.println();
+		return (output);
+
 	}
 
 	/*

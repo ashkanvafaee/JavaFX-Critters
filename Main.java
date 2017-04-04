@@ -1,73 +1,96 @@
 package assignment5;
 
 
-import java.io.Console;
 
 /* Main.java
-* Implements Critters World and all User Interface functionality
+ * EE422C Project 5 submission by
+ * Replace <...> with your actual data.
+ * Kevin Chau
+ * kc28535
+ * 18238
+ * Ashkan Vafaee
+ * av28837
+ * 18238
+ * Slip days used: <0>
+ * Git URL: https://github.com/ashkanvafaee/assignment5
+ * Spring 2017
 */
 
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
+import java.util.Timer;
+import java.util.TimerTask;
 import assignment5.Critter.TestCritter;
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.geometry.VPos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.RowConstraints;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Main extends Application {
 
-	static GridPane grid = new GridPane();
-	static TextArea output = new TextArea();				// Text field used to output runStats
-	static PrintStream ps;
-	private ChoiceBox<String> box2 = new ChoiceBox<String>();
-
+	// Main grid where critters are located
+	static GridPane grid = new GridPane(); 
+										
+	// Text field used to output runStats
+	private static TextArea output = new TextArea(); 
+											
+	// Lists the available critters
+	private ChoiceBox<String> box2 = new ChoiceBox<String>(); 
+															
+	// Used to alternate functionality of run/stop button
+	private static boolean flag = false; 
+										
+	private static Timer timer = new Timer();
+	private static int timerSteps; // Specifies steps/sec
 
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			// Changes output stream to a text field
-			ps = new PrintStream(new Console(output));
-			System.setOut(ps);
-			System.setErr(ps);
-			
+
 			primaryStage.setTitle("Critter World");
 
-			// grid.setGridLinesVisible(true);
+			// Sets dimensions of outer window based on Params
+			int displayWidth = 0;
+			int displayHeight = 0;
+			int colConstraint = 0;
 
-			// Sets dimensions of outer window
-			Scene scene = new Scene(grid, Params.world_width * 10, Params.world_height * 10);
+			// Small world
+			if (Params.world_width < 30 && Params.world_height < 30) {
+				displayWidth = Params.world_width * 30;
+				displayHeight = Params.world_height * 30;
+				colConstraint = 30;
+			}
+			// Medium world
+			else if (Params.world_width < 60 && Params.world_height < 60) {
+				displayWidth = Params.world_width * 16;
+				displayHeight = Params.world_height * 16;
+				colConstraint = 16;
+			}
+			// Big world
+			else {
+				displayWidth = Params.world_width * 10;
+				displayHeight = Params.world_height * 10;
+				colConstraint = 10;
+			}
+
+			Scene scene = new Scene(grid, displayWidth, displayHeight);
 			grid.setStyle("-fx-background-color: white;");
 
 			primaryStage.setScene(scene);
@@ -77,27 +100,20 @@ public class Main extends Application {
 			Stage userInterface = new Stage();
 			userInterface.setTitle("User Control");
 			GridPane userGrid = new GridPane();
-			Scene userScene = new Scene(userGrid, 500, 800);
+			Scene userScene = new Scene(userGrid, 500, 900);
 			userGrid.setStyle("-fx-background-color: white;");
 			userInterface.setScene(userScene);
 			userInterface.show();
 
 			// adds buffer around grids
-			// grid.setPadding(new Insets(10, 10, 10, 10));
 			userGrid.setPadding(new Insets(10, 10, 10, 10));
-			
-			/*Circle c = new Circle(3);
-			System.out.println(c.getRadius());
-			grid.add(c, 3, 3);
-			grid.getChildren().remove(c);*/
-			
 
 			for (int i = 0; i < Params.world_width; i++) {
-				ColumnConstraints column = new ColumnConstraints(10);
+				ColumnConstraints column = new ColumnConstraints(colConstraint);
 				grid.getColumnConstraints().add(column);
 			}
 			for (int i = 0; i < Params.world_height; i++) {
-				RowConstraints row = new RowConstraints(10);
+				RowConstraints row = new RowConstraints(colConstraint);
 				grid.getRowConstraints().add(row);
 			}
 
@@ -109,14 +125,30 @@ public class Main extends Application {
 				}
 			}
 
-			// These  lines define the row and column sizes of the user Grid
-			userGrid.getRowConstraints().add(new RowConstraints(90)); 	// Row 0 (Title)
+			// These lines define the row and column sizes of the user Grid
+
+			// Row 0 (Title)
+			userGrid.getRowConstraints().add(new RowConstraints(90));
+
 			userGrid.getColumnConstraints().add(new ColumnConstraints(300));
-			userGrid.getRowConstraints().add(new RowConstraints(50)); 	// Row 1 (Make Critters)
-			userGrid.getRowConstraints().add(new RowConstraints(200)); 	// Row 2 (Time Step)
-			userGrid.getRowConstraints().add(new RowConstraints(200)); 	// Row 3 (Set seed)
-			userGrid.getRowConstraints().add(new RowConstraints(100)); 	// Row 4 (runStarts)
-			userGrid.getRowConstraints().add(new RowConstraints(100));	// Row 5 (Animation)
+
+			// Row 1 Make Critters
+			userGrid.getRowConstraints().add(new RowConstraints(50));
+
+			// Row 2 Time Step
+			userGrid.getRowConstraints().add(new RowConstraints(150));
+
+			// Row 3 Set Seed
+			userGrid.getRowConstraints().add(new RowConstraints(150));
+
+			// Row 4 runStats
+			userGrid.getRowConstraints().add(new RowConstraints(100));
+
+			// Row 5 Animation
+			userGrid.getRowConstraints().add(new RowConstraints(300));
+
+			// Row 6 Exit
+			userGrid.getRowConstraints().add(new RowConstraints(260));
 
 			// Welcome Label
 			Label welcome = new Label();
@@ -148,7 +180,8 @@ public class Main extends Application {
 
 			// TextBox for specifying number of Critters
 			TextField t = new TextField();
-			t.setPromptText("  #"); // grayed out text
+			// t.setPromptText(" #"); // grayed out text
+			t.setText("1");
 			t.setMaxWidth(50);
 			t.setMinWidth(50);
 			userGrid.add(t, 1, 1);
@@ -156,33 +189,41 @@ public class Main extends Application {
 
 			// Drop down menu listing choices of Critters
 			ChoiceBox<String> box = new ChoiceBox<String>();
-			String packageName = this.getClass().getCanonicalName().substring(0,11);
+			String packageName = this.getClass().getCanonicalName().substring(0, 11);
 
 			// Parsing all valid Critter sub-types into the drop down menu
 			File f = new File(packageName);
 			String[] classList = f.list();
-			for (int i = 0; i < classList.length; i++) {
-				if (classList[i].endsWith(".class")) {
-					try {
-						Class<?> cType = Class
-								.forName(packageName + "." + classList[i].substring(0, classList[i].length() - 6));
-						Object cObject = cType.newInstance();
 
-						if (Critter.class.isAssignableFrom(cObject.getClass())
-								|| TestCritter.class.isAssignableFrom(cObject.getClass())) {
-							// System.out.println(classList[i].substring(0,
-							// classList[i].length() - 6));
-							box.getItems().add(classList[i].substring(0, classList[i].length() - 6));
-							box.setValue((classList[i].substring(0, classList[i].length() - 6)));
+			// means that .class files are located in separate bin folder
+			if (classList == null) { 
+				File f2 = new File(System.getProperty("user.dir") + "\\bin\\assignment5");
+				classList = f2.list();
+			}
+
+			// if .class files are located in same folder as .java files
+			if (classList != null) {
+				for (int i = 0; i < classList.length; i++) {
+					if (classList[i].endsWith(".class")) {
+						try {
+							Class<?> cType = Class
+									.forName(packageName + "." + classList[i].substring(0, classList[i].length() - 6));
+							Object cObject = cType.newInstance();
+
+							if (Critter.class.isAssignableFrom(cObject.getClass())
+									|| TestCritter.class.isAssignableFrom(cObject.getClass())) {
+								box.getItems().add(classList[i].substring(0, classList[i].length() - 6));
+								box.setValue((classList[i].substring(0, classList[i].length() - 6)));
+							}
+						} catch (Exception e) {
+							continue;
 						}
-					} catch (Exception e) {
-						continue;
 					}
 				}
 			}
+
 			userGrid.add(box, 0, 1);
-			
-			// box.setTranslateX(10);
+
 			box.setMaxWidth(90);
 			box.setMinWidth(90);
 
@@ -190,12 +231,20 @@ public class Main extends Application {
 			make.setOnAction(new EventHandler<ActionEvent>() {
 				public void handle(ActionEvent AE) {
 					try {
-						for (int i = 0; i < Integer.parseInt(t.getText()); i++) {
+						int val = Integer.parseInt(t.getText());
+						if (val < 0)
+							throw new Exception();
+						for (int i = 0; i < val; i++) {
 							Critter.makeCritter(box.getValue());
 						}
 						update();
 						Critter.displayWorld(grid);
-					} catch (InvalidCritterException e) {
+					} catch (Exception e) {
+						Alert a = new Alert(AlertType.ERROR);
+						a.setHeaderText("Invalid Input");
+						a.setResizable(true);
+						a.setContentText("Could not process " + t.getText());
+						a.showAndWait();
 					}
 				}
 			});
@@ -205,19 +254,18 @@ public class Main extends Application {
 			slider.setMaxWidth(200);
 			slider.setMaxWidth(200);
 			slider.setMin(1);
-			slider.setMax(500);
+			slider.setMax(1000);
 			slider.setValue(0);
 			slider.setShowTickLabels(true);
 			slider.setShowTickMarks(true);
 			slider.setMajorTickUnit(100);
 			slider.setMinorTickCount(5);
 			userGrid.add(slider, 0, 2);
-			// slider.setTranslateX();
 
 			// Textbox for slider
 			TextField ts = new TextField();
-			ts.setMaxWidth(50);
-			ts.setMinWidth(50);
+			ts.setMaxWidth(60);
+			ts.setMinWidth(60);
 			ts.setTranslateX(-75);
 			ts.setText("1");
 			userGrid.add(ts, 1, 2);
@@ -231,7 +279,6 @@ public class Main extends Application {
 
 			// Button for Time Steps
 			Button tStep = new Button("Perform Time Step");
-			// tStep.setTranslateX(-10 * (Params.world_width) + 400);
 			tStep.setTranslateY(50);
 			tStep.setMaxWidth(280);
 			tStep.setMinWidth(280);
@@ -248,27 +295,32 @@ public class Main extends Application {
 				}
 			});
 
-			// Time Step handler
+			// Time Step
 			tStep.setOnAction(new EventHandler<ActionEvent>() {
 				public void handle(ActionEvent AE) {
-					try {
+					if (isInt(ts.getText())) {
 						for (int i = 0; i < Integer.parseInt(ts.getText()); i++) {
 							Critter.worldTimeStep();
 						}
 						update();
 						Critter.displayWorld(grid);
-					} catch (Exception e) {
+					} else {
+						Alert a = new Alert(AlertType.ERROR);
+						a.setHeaderText("Invalid Input");
+						a.setResizable(true);
+						a.setContentText("Could not process " + ts.getText());
+						a.showAndWait();
 					}
 				}
 			});
-			
+
 			// Set Seed TextBox
 			TextField seed = new TextField();
 			seed.setPromptText("     #"); // grayed out text
 			seed.setMaxWidth(70);
 			seed.setMinWidth(70);
 			userGrid.add(seed, 0, 3);
-			
+
 			// Set Seed Button
 			Button setSeed = new Button("Set Seed");
 			userGrid.add(setSeed, 0, 3);
@@ -286,40 +338,55 @@ public class Main extends Application {
 					setSeed.setStyle("-fx-background-color: skyblue;");
 				}
 			});
-			
+
 			// Set Seed handler
 			setSeed.setOnAction(new EventHandler<ActionEvent>() {
 				public void handle(ActionEvent AE) {
 					try {
-						Critter.setSeed(Integer.parseInt(seed.getText()));;
+						int val = Integer.parseInt(seed.getText());
+						if (val < 0)
+							throw new Exception();
+						Critter.setSeed(val);
+						Alert a = new Alert(AlertType.INFORMATION);
+						a.setTitle("Seed Set");
+						a.setResizable(false);
+						a.setHeaderText("Seed set to: " + seed.getText());
+						a.showAndWait();
 					} catch (Exception e) {
+						Alert a = new Alert(AlertType.ERROR);
+						a.setHeaderText("Invalid Input");
+						a.setResizable(true);
+						a.setContentText("Could not process " + seed.getText());
+						a.showAndWait();
 					}
 				}
 			});
-			
-			
+
 			// Label for runStats output
 			output.setWrapText(true);
 			output.setTranslateY(80);
-			output.setMaxWidth(400);
-			output.setMaxHeight(600);
-			userGrid.add(output,0, 4);
-			
-			//choice box for runStats
-			// Parsing all valid Critter sub-types into the drop down menu
-			for (int i = 0; i < classList.length; i++) {
-				if (classList[i].endsWith(".class")) {
-					try {
-						Class<?> cType = Class.forName(packageName + "." + classList[i].substring(0, classList[i].length() - 6));
-						Object cObject = cType.newInstance();
+			output.setMaxWidth(900);
+			output.setMaxHeight(1000);
+			userGrid.add(output, 0, 4);
 
-						if (Critter.class.isAssignableFrom(cObject.getClass())
-								|| TestCritter.class.isAssignableFrom(cObject.getClass())) {
-							box2.getItems().add(classList[i].substring(0, classList[i].length() - 6));
-							box2.setValue((classList[i].substring(0, classList[i].length() - 6)));
+			// choice box for runStats
+			// Parsing all valid Critter sub-types into the drop down menu
+			if (classList != null) {
+				for (int i = 0; i < classList.length; i++) {
+					if (classList[i].endsWith(".class")) {
+						try {
+							Class<?> cType = Class
+									.forName(packageName + "." + classList[i].substring(0, classList[i].length() - 6));
+							Object cObject = cType.newInstance();
+
+							if (Critter.class.isAssignableFrom(cObject.getClass())
+									|| TestCritter.class.isAssignableFrom(cObject.getClass())) {
+								box2.getItems().add(classList[i].substring(0, classList[i].length() - 6));
+								box2.setValue((classList[i].substring(0, classList[i].length() - 6)));
+							}
+						} catch (Exception e) {
+							continue;
 						}
-					} catch (Exception e) {
-						continue;
 					}
 				}
 			}
@@ -328,9 +395,8 @@ public class Main extends Application {
 			// box.setTranslateX(10);
 			box2.setMaxWidth(90);
 			box2.setMinWidth(90);
-			
+
 			// runStats button
-			// Set Seed Button
 			Button statsButton = new Button("Run Stats");
 			userGrid.add(statsButton, 0, 4);
 			statsButton.setMaxWidth(100);
@@ -347,32 +413,212 @@ public class Main extends Application {
 					statsButton.setStyle("-fx-background-color: skyblue;");
 				}
 			});
-			
-			
+
 			// runStats handler
 			statsButton.setOnAction(new EventHandler<ActionEvent>() {
 				public void handle(ActionEvent AE) {
 					update();
 				}
 			});
-			
-			
-			
-			
-			
+
+			// Exit Button
+			Button exit = new Button("Quit");
+			userGrid.add(exit, 0, 6);
+			exit.setMaxWidth(300);
+			exit.setMinWidth(300);
+			exit.setTranslateX(80);
+			exit.setTranslateY(-130);
+			exit.setStyle("-fx-background-color: skyblue;");
+			exit.setOnMouseEntered(new EventHandler<MouseEvent>() {
+				public void handle(MouseEvent AE) {
+					exit.setStyle("-fx-background-color: lightblue;");
+				}
+			});
+			exit.setOnMouseExited(new EventHandler<MouseEvent>() {
+				public void handle(MouseEvent AE) {
+					exit.setStyle("-fx-background-color: skyblue;");
+				}
+			});
+
+			// Exit handler
+			exit.setOnAction(new EventHandler<ActionEvent>() {
+				public void handle(ActionEvent AE) {
+					try {
+						System.exit(0);
+					} catch (Exception e) {
+					}
+				}
+			});
+			// Slider for Animation steps/frame
+			Slider sliderAn = new Slider();
+			sliderAn.setMaxWidth(200);
+			sliderAn.setMaxWidth(200);
+			sliderAn.setMin(1);
+			sliderAn.setMax(100);
+			sliderAn.setValue(0);
+			sliderAn.setShowTickLabels(true);
+			sliderAn.setShowTickMarks(true);
+			sliderAn.setMajorTickUnit(100);
+			sliderAn.setMinorTickCount(5);
+			userGrid.add(sliderAn, 0, 5);
+
+			// Textbox for slider
+			TextField tsAn = new TextField();
+			tsAn.setMaxWidth(60);
+			tsAn.setMinWidth(60);
+			tsAn.setTranslateX(-75);
+			tsAn.setText("1");
+			tsAn.setTranslateY(-5);
+			userGrid.add(tsAn, 1, 5);
+
+			// slider handler
+			sliderAn.setOnMouseDragged(new EventHandler<MouseEvent>() {
+				public void handle(MouseEvent AE) {
+					tsAn.setText(Integer.toString((int) sliderAn.getValue()));
+				}
+			});
+
+			// Button for Animation
+			Button run = new Button("Run");
+			userGrid.add(run, 1, 5);
+			run.setMaxWidth(100);
+			run.setMinWidth(100);
+			run.setTranslateX(10);
+			run.setTranslateY(-5);
+			run.setStyle("-fx-background-color: skyblue;");
+
+			// Label unit for slider
+			Label unit1 = new Label("steps/frame:");
+			unit1.setMaxWidth(100);
+			unit1.setMinWidth(100);
+			unit1.setTranslateY(-30);
+			userGrid.add(unit1, 0, 5);
+
+			// Slider for Animation frames/sec
+			Slider sliderAn2 = new Slider();
+			sliderAn2.setMaxWidth(200);
+			sliderAn2.setMaxWidth(200);
+			sliderAn2.setMin(1);
+			sliderAn2.setMax(10);
+			sliderAn2.setValue(0);
+			sliderAn2.setShowTickLabels(true);
+			sliderAn2.setShowTickMarks(true);
+			sliderAn2.setMajorTickUnit(1);
+			sliderAn2.setMinorTickCount(0);
+			sliderAn2.setTranslateY(70);
+			sliderAn2.setSnapToTicks(true);
+			userGrid.add(sliderAn2, 0, 5);
+
+			// Label unit for slider
+			Label unit2 = new Label("frames/sec:");
+			unit2.setMaxWidth(100);
+			unit2.setMinWidth(100);
+			unit2.setTranslateY(40);
+			userGrid.add(unit2, 0, 5);
+
+			AnimationTimer timer1 = new repeat();
+
+			// Animation button handler
+			run.setOnAction(new EventHandler<ActionEvent>() {
+				public void handle(ActionEvent AE) {
+
+					if (isInt(tsAn.getText())) {
+
+						if (flag) {
+							run.setStyle("-fx-background-color: skyblue;");
+							run.setText("Run");
+							flag = !flag;
+							timer.cancel();
+							timer1.stop();
+
+							// Enabling All Buttons and bottom 2 sliders
+							make.setDisable(false);
+							make.setStyle("-fx-background-color: skyblue;");
+							tStep.setDisable(false);
+							tStep.setStyle("-fx-background-color: skyblue;");
+							setSeed.setDisable(false);
+							setSeed.setStyle("-fx-background-color: skyblue;");
+							statsButton.setDisable(false);
+							statsButton.setStyle("-fx-background-color: skyblue;");
+							sliderAn.setDisable(false);
+							sliderAn2.setDisable(false);
+							box2.setDisable(false);
+							box.setDisable(false);
+							t.setDisable(false);
+							slider.setDisable(false);
+							ts.setDisable(false);
+							seed.setDisable(false);
+							exit.setDisable(false);
+
+						} else {
+							// Disabling All Buttons and bottom 2 sliders
+							make.setDisable(true);
+							make.setStyle("-fx-background-color: gray;");
+							tStep.setDisable(true);
+							tStep.setStyle("-fx-background-color: gray;");
+							setSeed.setDisable(true);
+							setSeed.setStyle("-fx-background-color: gray;");
+							statsButton.setDisable(true);
+							statsButton.setStyle("-fx-background-color: gray;");
+							sliderAn.setDisable(true);
+							sliderAn2.setDisable(true);
+							box2.setDisable(true);
+							box.setDisable(true);
+							t.setDisable(true);
+							slider.setDisable(true);
+							ts.setDisable(true);
+							seed.setDisable(true);
+							exit.setDisable(true);
+
+							// sets steps/frame
+							timerSteps = Integer.parseInt(tsAn.getText());
+
+							timer = new Timer();
+
+							timer.scheduleAtFixedRate(new TimerTask() {
+
+								@Override
+								public void run() {
+									timer1.start();
+								}
+
+							}, 0, 1000 / (int) sliderAn2.getValue());
+
+							run.setStyle("-fx-background-color: orange;");
+							run.setText("Stop");
+							flag = !flag;
+						}
+
+					} else {
+						Alert a = new Alert(AlertType.ERROR);
+						a.setHeaderText("Invalid Input");
+						a.setResizable(true);
+						a.setContentText("Could not process " + tsAn.getText());
+						a.showAndWait();
+					}
+				}
+			});
 
 		} catch (Exception e) {
-			e.printStackTrace();
+		}
+	}
+
+	private boolean isInt(String input) {
+		try {
+			Integer.parseInt(input);
+			return true;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 
 	public static void main(String[] args) {
 		launch(args);
 	}
-	
-	//Method that updates the runStats output
-	private void update(){
-		String packageName = this.getClass().getCanonicalName().substring(0,11);
+
+	// Method that updates the runStats output
+	private void update() {
+		String packageName = this.getClass().getCanonicalName().substring(0, 11);
 
 		try {
 			Class<?> cType = Class.forName(packageName + "." + box2.getValue());
@@ -385,51 +631,26 @@ public class Main extends Application {
 
 					myCritter = Class.forName(packageName + "." + box2.getValue());
 					Method m1 = myCritter.getMethod("runStats", List.class);
-					m1.invoke(null, Critter.getInstances(box2.getValue()));
-
+					Object value = m1.invoke(null, Critter.getInstances(box2.getValue()));
+					output.setText((String) value);
 				}
 
 			}
-
 		} catch (Exception e) {
 		}
-		
 	}
-	
-	
-    public class Console extends OutputStream {
-        private TextArea console;
 
-        public Console(TextArea console) {
-            this.console = console;
-        }
+	// Overrides the timer handler
+	class repeat extends AnimationTimer {
 
-        public void appendText(String valueOf) {
-            Platform.runLater(() -> console.appendText(valueOf));
-        }
-
-        public void write(int b) throws IOException {
-            appendText(String.valueOf((char)b));
-        }
-    }
+		@Override
+		public void handle(long now) {
+			for (int i = 0; i < timerSteps; i++) {
+				Critter.worldTimeStep();
+			}
+			update();
+			Critter.displayWorld(grid);
+			this.stop();
+		}
+	}
 }
-
-
-
-/*
- * Reference Code
- * 
- * 
- * 
- * /*for(int i=1; i<Params.world_height; i++){ Rectangle r = new Rectangle
- * (10,10); r.setFill(javafx.scene.paint.Color.WHITE);
- * r.setStyle("-fx-border-color: black;"); grid.addRow(i, r);
- * //GridPane.setHalignment(r, HPos.CENTER);
- * 
- * }
- * 
- * for(int j=1;j<Params.world_width;j++){ Rectangle r = new Rectangle (10,10);
- * r.setFill(javafx.scene.paint.Color.WHITE);
- * r.setStyle("-fx-border-color: black;"); grid.addColumn(j, r);
- * //GridPane.setValignment(r, VPos.CENTER); }
- */

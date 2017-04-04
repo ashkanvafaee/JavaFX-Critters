@@ -35,6 +35,15 @@ public class Critter1 extends Critter {
 			run(dir);
 		}
 
+		if (look(dir, true) == null) {
+			if (getEnergy() > 20) {
+				run(dir);
+			}
+		} else {
+			dir = Critter.getRandomInt(8);
+			run(dir);
+		}
+
 		if (getEnergy() > Params.min_reproduce_energy * 2) {
 			Critter1 child = new Critter1();
 			reproduce(child, getRandomInt(8));
@@ -45,7 +54,9 @@ public class Critter1 extends Critter {
 
 	/**
 	 * This critter always fights
-	 * @param opponent type of opponent specified by opponent's toString method
+	 * 
+	 * @param opponent
+	 *            type of opponent specified by opponent's toString method
 	 */
 	@Override
 	public boolean fight(String opponent) {
@@ -61,14 +72,14 @@ public class Critter1 extends Critter {
 	public CritterShape viewShape() {
 		return CritterShape.TRIANGLE;
 	}
-	
+
 	@Override
-	public javafx.scene.paint.Color viewOutlineColor() { 
-		return javafx.scene.paint.Color.BLACK; 
-		}
-	
+	public javafx.scene.paint.Color viewOutlineColor() {
+		return javafx.scene.paint.Color.BLACK;
+	}
+
 	@Override
-	public javafx.scene.paint.Color viewFillColor(){
+	public javafx.scene.paint.Color viewFillColor() {
 		return javafx.scene.paint.Color.ORANGE;
 	}
 }

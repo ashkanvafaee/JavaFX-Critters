@@ -45,7 +45,9 @@ public class Critter2 extends Critter {
 
 	/**
 	 * This critter only fights algae, otherwise it walks away from the fight.
-	 * @param opponent type of opponent specified by opponent's toString method
+	 * 
+	 * @param opponent
+	 *            type of opponent specified by opponent's toString method
 	 */
 	@Override
 	public boolean fight(String opponent) {
@@ -53,7 +55,12 @@ public class Critter2 extends Critter {
 		if (opponent.equals("@")) {
 			return true;
 		} else {
-			walk(dir);
+			if (look(dir, false) == null) {
+				walk(dir);
+			} else {
+				dir = getRandomInt(8);
+				walk(dir);
+			}
 			return false;
 		}
 	}
@@ -67,14 +74,14 @@ public class Critter2 extends Critter {
 	public CritterShape viewShape() {
 		return CritterShape.DIAMOND;
 	}
-	
+
 	@Override
-	public javafx.scene.paint.Color viewOutlineColor() { 
-		return javafx.scene.paint.Color.RED; 
-		}
-	
+	public javafx.scene.paint.Color viewOutlineColor() {
+		return javafx.scene.paint.Color.RED;
+	}
+
 	@Override
-	public javafx.scene.paint.Color viewFillColor(){
+	public javafx.scene.paint.Color viewFillColor() {
 		return javafx.scene.paint.Color.LIMEGREEN;
 	}
 }
