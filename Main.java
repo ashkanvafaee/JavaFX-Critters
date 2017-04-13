@@ -15,6 +15,8 @@ package assignment5;
  * Git URL: https://github.com/ashkanvafaee/assignment5
  * Spring 2017
 */
+import javafx.concurrent.*;
+import javafx.scene.shape.*;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -59,6 +61,7 @@ public class Main extends Application {
 										
 	private static Timer timer = new Timer();
 	private static int timerSteps; // Specifies steps/sec
+	public static boolean timerFlag = false;
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -452,7 +455,7 @@ public class Main extends Application {
 			// Slider for Animation steps/frame
 			Slider sliderAn = new Slider();
 			sliderAn.setMaxWidth(200);
-			sliderAn.setMaxWidth(200);
+			sliderAn.setMinWidth(200);
 			sliderAn.setMin(1);
 			sliderAn.setMax(100);
 			sliderAn.setValue(0);
@@ -648,9 +651,40 @@ public class Main extends Application {
 			for (int i = 0; i < timerSteps; i++) {
 				Critter.worldTimeStep();
 			}
+			
+			Runnable r = new UpdateWorldThread();
+			grid.getChildren().removeAll(Critter.shapes.values());
+			Thread t = new Thread(r);
+			//t.setDaemon(true);
+			t.start();
 			update();
-			Critter.displayWorld(grid);
+			
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			t.stop();
+
+			Critter.optimizedDisplay(grid);
+			
+
+	
+
+			
 			this.stop();
 		}
 	}
+	
+	Task updateWorld = new Task<Void>(){
+		@Override public Void call(){
+			Critter.displayWorld(grid);
+			timerFlag=false;
+			return null;
+		}
+	};
+
+	
+	
 }

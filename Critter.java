@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
@@ -62,7 +63,7 @@ public abstract class Critter {
 	private static String myPackage;
 	private static List<Critter> population = new ArrayList<>();
 	private static List<Critter> babies = new ArrayList<>();
-	private static HashMap<Critter, Shape> shapes = new HashMap<>();
+	public static HashMap<Critter, Shape> shapes = new HashMap<>();
 
 	private static double worldSize = 0;
 
@@ -383,6 +384,23 @@ public abstract class Critter {
 			}
 		}
 	}
+	
+	public static void optimizedDisplay(Object pane){
+		GridPane grid = (GridPane) pane;		
+		grid.getChildren().removeAll(shapes.values());
+
+		
+
+		Set<Critter> set = (Set<Critter>) shapes.keySet();
+		for(Critter c : set){
+			grid.add(shapes.get(c), c.x_coord, c.y_coord);
+		}
+		
+		if(Main.timerFlag)
+		shapes.clear();
+
+				
+	}
 
 	public static void displayWorld(Object pane) {
 
@@ -400,13 +418,17 @@ public abstract class Critter {
 
 		// Removing all objects from shape to be refreshed with correct
 		// coordinates in displayWorld
-		GridPane grid = (GridPane) pane;
 		try {
+
+			GridPane grid = (GridPane) pane;
 			grid.getChildren().removeAll(shapes.values());
+			shapes.clear();
+
 		} catch (Exception e) {
+			System.out.println("ERROR");
 		}
 
-		shapes.clear();
+		
 
 		for (int i = 0; i < population.size(); i++) {
 
@@ -415,7 +437,7 @@ public abstract class Critter {
 				s.setFill(population.get(i).viewFillColor());
 				s.setStroke(population.get(i).viewOutlineColor());
 				s.setStyle("-fx-border-color: black;");
-				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				//grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
 				shapes.put(population.get(i), s);
 				GridPane.setHalignment(s, HPos.CENTER);
 				GridPane.setValignment(s, VPos.CENTER);
@@ -426,7 +448,7 @@ public abstract class Critter {
 				s.setFill(population.get(i).viewFillColor());
 				s.setStroke(population.get(i).viewOutlineColor());
 				s.setStyle("-fx-border-color: black;");
-				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				//grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
 				shapes.put(population.get(i), s);
 				GridPane.setHalignment(s, HPos.CENTER);
 				GridPane.setValignment(s, VPos.CENTER);
@@ -444,7 +466,7 @@ public abstract class Critter {
 				s.setFill(population.get(i).viewFillColor());
 				s.setStroke(population.get(i).viewOutlineColor());
 				s.setStyle("-fx-border-color: black;");
-				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				//grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
 				shapes.put(population.get(i), s);
 				GridPane.setHalignment(s, HPos.CENTER);
 				GridPane.setValignment(s, VPos.CENTER);
@@ -464,7 +486,7 @@ public abstract class Critter {
 				s.setFill(population.get(i).viewFillColor());
 				s.setStroke(population.get(i).viewOutlineColor());
 				s.setStyle("-fx-border-color: black;");
-				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				//grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
 				shapes.put(population.get(i), s);
 				GridPane.setHalignment(s, HPos.CENTER);
 				GridPane.setValignment(s, VPos.CENTER);
@@ -490,11 +512,19 @@ public abstract class Critter {
 				s.setStroke(population.get(i).viewOutlineColor());
 				shapes.put(population.get(i), s);
 				s.setStyle("-fx-border-color: black;");
-				grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
+				//grid.add(s, population.get(i).x_coord, population.get(i).y_coord);
 				GridPane.setHalignment(s, HPos.CENTER);
 				GridPane.setValignment(s, VPos.CENTER);
 
 			}
+		}
+		
+		try {
+			if (!Main.timerFlag) {
+				optimizedDisplay(pane);
+			}
+		} catch (Exception e) {
+
 		}
 
 	}
